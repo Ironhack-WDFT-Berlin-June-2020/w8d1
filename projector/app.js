@@ -10,6 +10,11 @@ const logger = require('morgan');
 const path = require('path');
 
 
+const session = require('express-session');
+const passport = require('passport');
+
+require('./configs/passport');
+
 mongoose
   .connect('mongodb://localhost/projector', { useNewUrlParser: true })
   .then(x => {
@@ -19,10 +24,27 @@ mongoose
     console.error('Error connecting to mongo', err)
   });
 
+
+
+
 const app_name = require('./package.json').name;
 const debug = require('debug')(`${app_name}:${path.basename(__filename).split('.')[0]}`);
 
 const app = express();
+
+// passport
+const MongoStore = require('connect-mongo')(session);
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: new MongoStore({ mongooseConnection: mongoose.connection })
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+
 
 // Middleware Setup
 app.use(logger('dev'));
@@ -53,5 +75,6 @@ app.locals.title = 'Express - Generated with IronGenerator';
 
 app.use('/api/projects', require('./routes/project'));
 app.use('/api/tasks', require('./routes/task'));
+app.use('/api/auth', require('./routes/auth'));
 
 module.exports = app;
