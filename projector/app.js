@@ -16,7 +16,7 @@ const passport = require('passport');
 require('./configs/passport');
 
 mongoose
-  .connect('mongodb://localhost/projector', { useNewUrlParser: true })
+  .connect(process.env.MONGODB_URI || 'mongodb://localhost/projector', { useNewUrlParser: true })
   .then(x => {
     console.log(`Connected to Mongo! Database name: "${x.connections[0].name}"`)
   })
@@ -63,7 +63,7 @@ app.use(require('node-sass-middleware')({
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "/client/build")));
 app.use(favicon(path.join(__dirname, 'public', 'images', 'favicon.ico')));
 
 
@@ -76,5 +76,10 @@ app.locals.title = 'Express - Generated with IronGenerator';
 app.use('/api/projects', require('./routes/project'));
 app.use('/api/tasks', require('./routes/task'));
 app.use('/api/auth', require('./routes/auth'));
+
+app.use((req, res) => {
+  // If no routes match, send them the React HTML.
+  res.sendFile(__dirname + "/client/build/index.html");
+});
 
 module.exports = app;
